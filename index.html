@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Magic Errands" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Magic Errands</title>
+  <link rel="manifest" href="#" id="manifest-placeholder" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap');
+    :root {
+      --bg: #0a0a0a; --surface: #141414; --surface2: #111; --border: #1e1e1e; --border2: #2a2a2a;
+      --text: #e8e8e0; --muted: #555; --orange: #f97316; --orange-dim: #f9731622; --green: #10b981;
+      --amber: #f59e0b; --blue: #3b82f6; --red: #ef4444;
+      --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'DM Mono', 'Courier New', monospace; background: var(--bg); color: var(--text); min-height: 100vh; min-height: -webkit-fill-available; overflow: hidden; user-select: none; }
+    #app { display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; }
+    .status-bar { height: var(--safe-top); background: var(--bg); flex-shrink: 0; }
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #1a1a1a; flex-shrink: 0; }
+    .logo { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; color: var(--orange); letter-spacing: -0.02em; }
+    .header-sub { font-size: 9px; color: #2a2a2a; letter-spacing: 0.15em; text-transform: uppercase; }
+    .notif-badge { background: var(--orange); color: var(--bg); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+    .content { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 0; }
+    .page { display: none; padding: 20px 16px; }
+    .page.active { display: block; }
+    .bottom-nav { display: flex; border-top: 1px solid #1a1a1a; background: #0a0a0aee; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); flex-shrink: 0; padding-bottom: var(--safe-bottom); }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 4px 8px; cursor: pointer; gap: 3px; transition: opacity 0.15s; border: none; background: none; color: #444; font-family: inherit; }
+    .nav-item.active { color: var(--orange); }
+    .nav-item:active { opacity: 0.7; }
+    .nav-icon { font-size: 18px; }
+    .nav-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-bottom: 10px; transition: border-color 0.2s; cursor: pointer; }
+    .card:active { border-color: var(--orange); background: #1a1010; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 16px 14px; }
+    .stat-val { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 2px; }
+    .stat-lbl { font-size: 9px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+    .section-head { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .btn { border: none; cursor: pointer; font-family: inherit; border-radius: 4px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; padding: 11px 18px; transition: all 0.15s; }
+    .btn:active { opacity: 0.8; transform: scale(0.98); }
+    .btn-primary { background: var(--orange); color: var(--bg); font-weight: 500; }
+    .btn-ghost { background: none; border: 1px solid #333; color: #888; }
+    .btn-danger { background: none; border: 1px solid #7f1d1d; color: var(--red); }
+    .btn-row { display: flex; gap: 8px; margin-top: 12px; }
+    .btn-row .btn { flex: 1; }
+    .field { margin-bottom: 14px; }
+    .field label { font-size: 9px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+    input[type=text], input[type=number], input[type=date], input[type=time], textarea, select { background: #0f0f0f; border: 1px solid var(--border2); color: var(--text); font-family: inherit; font-size: 14px; padding: 12px; border-radius: 4px; outline: none; width: 100%; -webkit-appearance: none; }
+    input:focus, textarea:focus, select:focus { border-color: var(--orange); }
+    textarea { resize: vertical; min-height: 80px; }
+    select option { background: #141414; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .cat-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .cat-pill { padding: 5px 12px; border-radius: 20px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border: 1px solid #222; background: none; color: #555; font-family: inherit; white-space: nowrap; }
+    .cat-pill.active { border-color: var(--orange); color: var(--orange); background: var(--orange-dim); }
+    .tabs { display: flex; border-bottom: 1px solid #1a1a1a; margin-bottom: 14px; }
+    .tab { flex: 1; padding: 10px 4px; font-family: inherit; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; background: none; border: none; border-bottom: 2px solid transparent; color: #444; cursor: pointer; }
+    .tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+    .sheet { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; background: var(--bg); }
+    .sheet.open { display: flex; }
+    .sheet-header { display: flex; align-items: center; gap: 12px; padding: calc(var(--safe-top) + 12px) 16px 12px; border-bottom: 1px solid #1a1a1a; flex-shrink: 0; }
+    .back-btn { background: none; border: none; color: var(--orange); font-family: inherit; font-size: 13px; cursor: pointer; padding: 4px 0; display: flex; align-items: center; gap: 4px; }
+    .sheet-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px; }
+    .msg-list { display: flex; flex-direction: column; gap: 8px; min-height: 60px; margin-bottom: 12px; }
+    .msg { padding: 10px 13px; border-radius: 12px; max-width: 80%; font-size: 13px; line-height: 1.4; }
+    .msg-you { background: #1a0f05; border: 1px solid #f9731633; align-self: flex-end; border-radius: 12px 12px 0 12px; }
+    .msg-customer { background: var(--surface); border: 1px solid var(--border); align-self: flex-start; border-radius: 12px 12px 12px 0; }
+    .msg-from { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 3px; }
+    .msg-input-row { display: flex; gap: 8px; }
+    .msg-input-row input { flex: 1; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; }
+    .info-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-bottom: 12px; }
+    .info-label { font-size: 9px; color: #444; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
+    .success-banner { background: #10b98122; border: 1px solid #10b98155; border-radius: 6px; padding: 12px; margin-bottom: 16px; color: var(--green); font-size: 13px; display: none; }
+    .success-banner.show { display: block; }
+    .pulse { animation: pulse 2s infinite; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .page-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; margin-bottom: 20px; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp 0.3s ease forwards; }
+    .sched-item { display: flex; gap: 14px; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 10px; }
+    .sched-date { width: 48px; text-align: center; flex-shrink: 0; }
+    .sched-day { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--orange); line-height: 1; }
+    .sched-mon { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="status-bar"></div>
+  <div class="header">
+    <div>
+      <div class="logo">&#10022; MAGIC ERRANDS</div>
+      <div class="header-sub">by Dev</div>
+    </div>
+    <div id="header-badge" class="notif-badge" style="display:none"></div>
+  </div>
+  <div class="content">
+    <div class="page active fade-up" id="page-dash">
+      <div class="page-title" id="greeting">Hey Dev &#10022;</div>
+      <div class="page-sub">Here's what's happening.</div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-val" id="stat-pending" style="color:var(--amber)">0</div><div class="stat-lbl">Pending Bids</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-active" style="color:var(--green)">0</div><div class="stat-lbl">Active Jobs</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-earnings" style="color:var(--orange)">$0</div><div class="stat-lbl">Est. Earnings</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-today" style="color:var(--blue)">0</div><div class="stat-lbl">Today's Jobs</div></div>
+      </div>
+      <div class="section-head">New Bids <span class="pulse" id="dash-pulse" style="display:none"></span></div>
+      <div id="dash-pending"></div>
+      <div class="section-head" style="margin-top:20px">Upcoming</div>
+      <div id="dash-accepted"></div>
+    </div>
+    <div class="page" id="page-jobs">
+      <div class="page-title">Jobs</div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('available',this)">Available</button>
+        <button class="tab" onclick="switchTab('accepted',this)">Accepted</button>
+        <button class="tab" onclick="switchTab('declined',this)">Declined</button>
+      </div>
+      <div class="cat-pills" id="cat-pills"></div>
+      <div id="job-list"></div>
+    </div>
+    <div class="page" id="page-schedule">
+      <div class="page-title">Schedule</div>
+      <div class="page-sub">Your accepted jobs timeline.</div>
+      <div id="schedule-list"></div>
+    </div>
+    <div class="page" id="page-post">
+      <div class="page-title">Post a Job</div>
+      <div class="page-sub">Customers submit jobs &amp; bids here.</div>
+      <div class="success-banner" id="post-success">&#10003; Job posted! Check the Jobs tab.</div>
+      <div class="field"><label>Job Title *</label><input type="text" id="f-title" placeholder="e.g. Grocery run, furniture assembly..." /></div>
+      <div class="field"><label>Description</label><textarea id="f-desc" placeholder="Describe what needs to be done..."></textarea></div>
+      <div class="field-row">
+        <div class="field"><label>Bid ($) *</label><input type="number" id="f-bid" placeholder="25" min="1" /></div>
+        <div class="field"><label>Category</label>
+          <select id="f-cat">
+            <option>Shopping</option><option>Assembly</option><option>Pets</option>
+            <option>Cleaning</option><option>Delivery</option><option selected>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Address</label><input type="text" id="f-addr" placeholder="Street address, city..." /></div>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:13px;margin-top:4px" onclick="postJob()">&#10022; Submit Job</button>
+    </div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="navTo('dash',this)"><span class="nav-icon">&#8862;</span><span class="nav-label">Dash</span></button>
+    <button class="nav-item" onclick="navTo('jobs',this)"><span class="nav-icon">&#8853;</span><span class="nav-label">Jobs</span></button>
+    <button class="nav-item" onclick="navTo('schedule',this)"><span class="nav-icon">&#8857;</span><span class="nav-label">Schedule</span></button>
+    <button class="nav-item" onclick="navTo('post',this)"><span class="nav-icon">+</span><span class="nav-label">Post</span></button>
+  </nav>
+</div>
+<div class="sheet" id="sheet">
+  <div class="sheet-header">
+    <button class="back-btn" onclick="closeSheet()">&#8249; Back</button>
+    <div id="sheet-status"></div>
+  </div>
+  <div class="sheet-body">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:3px" id="s-title"></div>
+        <div style="font-size:11px;color:var(--muted)" id="s-meta"></div>
+      </div>
+      <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--orange)" id="s-bid"></div>
+    </div>
+    <div class="info-box" style="margin-bottom:12px">
+      <div class="info-label">Details</div>
+      <div style="font-size:13px;color:#bbb;line-height:1.6;margin-bottom:8px" id="s-desc"></div>
+      <div style="font-size:11px;color:var(--muted)" id="s-addr"></div>
+    </div>
+    <div id="s-actions"></div>
+    <div class="info-box" id="s-schedule-box" style="display:none">
+      <div class="info-label">Schedule</div>
+      <div id="s-sched-current" style="color:var(--orange);font-size:13px;margin-bottom:10px"></div>
+      <div class="field-row">
+        <input type="date" id="s-date" />
+        <input type="time" id="s-time" />
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="scheduleJob()">Set Time</button>
+    </div>
+    <div class="info-box">
+      <div class="info-label">Messages</div>
+      <div class="msg-list" id="s-msgs"></div>
+      <div class="msg-input-row">
+        <input type="text" id="s-msg-input" placeholder="Send a message..." onkeydown="if(event.key==='Enter')sendMsg()" />
+        <button class="btn btn-primary" onclick="sendMsg()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const CAT_COLORS = {Shopping:'#f59e0b',Assembly:'#3b82f6',Pets:'#10b981',Cleaning:'#8b5cf6',Delivery:'#ef4444',Other:'#6b7280'};
+let jobs = JSON.parse(localStorage.getItem('magic_errands_jobs') || 'null') || [
+  {id:1,title:'Grocery Run',description:'Pick up groceries from Hy-Vee. List provided.',bid:25,customer:'Sarah M.',address:'123 Oak St, Eldridge IA',status:'pending',date:'',time:'',messages:[],postedAt:'2h ago',category:'Shopping'},
+  {id:2,title:'Furniture Assembly',description:'IKEA dresser needs assembly. All parts included.',bid:60,customer:'James T.',address:'456 Maple Ave, Bettendorf IA',status:'pending',date:'',time:'',messages:[],postedAt:'45m ago',category:'Assembly'},
+  {id:3,title:'Dog Walk',description:"30 min walk for my golden retriever. He's very friendly!",bid:15,customer:'Linda K.',address:'789 Pine Rd, Davenport IA',status:'accepted',date:new Date().toISOString().split('T')[0],time:'10:00',messages:[{from:'customer',text:'He loves the park on 5th!'}],postedAt:'1d ago',category:'Pets'},
+];
+let currentTab = 'available', activeCategory = 'All', currentJobId = null;
+function save() { localStorage.setItem('magic_errands_jobs', JSON.stringify(jobs)); }
+function navTo(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  el.classList.add('active');
+  render();
+}
+function render() {
+  const pending = jobs.filter(j => j.status === 'pending');
+  const accepted = jobs.filter(j => j.status === 'accepted');
+  const today = new Date().toISOString().split('T')[0];
+  const badge = document.getElementById('header-badge');
+  if (pending.length > 0) { badge.style.display = 'flex'; badge.textContent = pending.length; } else badge.style.display = 'none';
+  document.getElementById('stat-pending').textContent = pending.length;
+  document.getElementById('stat-active').textContent = accepted.length;
+  document.getElementById('stat-earnings').textContent = '$' + accepted.reduce((s,j)=>s+j.bid,0);
+  document.getElementById('stat-today').textContent = accepted.filter(j=>j.date===today).length;
+  document.getElementById('dash-pulse').style.display = pending.length ? 'inline-block' : 'none';
+  const dp = document.getElementById('dash-pending');
+  if (pending.length === 0) { dp.innerHTML = '<div style="color:#333;font-size:13px;padding:12px 0">No pending bids right now.</div>'; }
+  else {
+    dp.innerHTML = pending.slice(0,3).map(j => '<div class="card" onclick="openSheet('+j.id+')"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:14px;font-weight:500">'+j.title+'</span><span style="color:var(--orange);font-family:'Syne',sans-serif;font-weight:700">$'+j.bid+'</span></div><div style="font-size:11px;color:var(--muted);margin-bottom:10px">'+j.customer+' · '+j.postedAt+'</div><div style="display:flex;gap:8px"><button class="btn btn-primary" style="flex:1;padding:8px" onclick="event.stopPropagation();quickAccept('+j.id+')">&#10003; Accept</button><button class="btn btn-danger" style="flex:1;padding:8px" onclick="event.stopPropagation();quickDecline('+j.id+')">&#10005; Decline</button></div></div>').join('') + (pending.length > 3 ? '<button class="btn btn-ghost" style="width:100%" onclick="navTo('jobs',document.querySelectorAll('.nav-item')[1])">View '+(pending.length-3)+' more →</button>' : '');
+  }
+  const da = document.getElementById('dash-accepted');
+  if (accepted.length === 0) { da.innerHTML = '<div style="color:#333;font-size:13px;padding:12px 0">No accepted jobs yet.</div>'; }
+  else { da.innerHTML = accepted.slice(0,3).map(j => '<div class="card" onclick="openSheet('+j.id+')"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:14px;font-weight:500">'+j.title+'</span><span style="color:var(--green);font-size:13px">$'+j.bid+'</span></div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">'+j.customer+'</div><div style="font-size:11px;color:'+(j.date?'var(--orange)':'var(--muted)')+'">'+( j.date ? fmtDate(j.date)+(j.time?' @ '+j.time:'') : '⚠ Not scheduled')+'</div></div>').join(''); }
+  const cats = ['All','Shopping','Assembly','Pets','Cleaning','Delivery','Other'];
+  document.getElementById('cat-pills').innerHTML = currentTab === 'available' ? cats.map(c=>'<button class="cat-pill '+(activeCategory===c?'active':'')+'" onclick="setCat(''+c+'')">'+c+'</button>').join('') : '';
+  const listJobs = currentTab === 'available' ? jobs.filter(j=>j.status==='pending'&&(activeCategory==='All'||j.category===activeCategory)) : currentTab === 'accepted' ? accepted : jobs.filter(j=>j.status==='declined');
+  const jl = document.getElementById('job-list');
+  if (listJobs.length === 0) { jl.innerHTML = '<div style="color:#333;font-size:13px;padding:16px 0">Nothing here yet.</div>'; }
+  else { jl.innerHTML = listJobs.map(j => '<div class="card" onclick="openSheet('+j.id+')"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:14px;font-weight:500">'+j.title+'</span><span style="color:var(--orange);font-family:'Syne',sans-serif;font-weight:700">$'+j.bid+'</span></div><div style="font-size:11px;color:var(--muted);margin-bottom:8px">'+j.customer+' · '+j.postedAt+'</div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:3px;background:'+(CAT_COLORS[j.category]||'#555')+'22;color:'+(CAT_COLORS[j.category]||'#888')+';border:1px solid '+(CAT_COLORS[j.category]||'#555')+'44">'+j.category+'</span>'+(j.messages.length>0?'<span style="font-size:10px;color:var(--muted)">💬 '+j.messages.length+'</span>':'')+'</div></div>').join(''); }
+  const sl = document.getElementById('schedule-list');
+  const sJobs = accepted.sort((a,b)=>(a.date||'9999')>(b.date||'9999')?1:-1);
+  if (sJobs.length === 0) { sl.innerHTML = '<div style="color:#333;font-size:13px">No accepted jobs yet.</div>'; }
+  else { sl.innerHTML = sJobs.map(j => '<div class="sched-item"><div class="sched-date">'+(j.date?'<div class="sched-day">'+new Date(j.date+'T00:00').getDate()+'</div><div class="sched-mon">'+new Date(j.date+'T00:00').toLocaleDateString('en-US',{month:'short'})+'</div>':'<div style="font-size:9px;color:#444;text-transform:uppercase">TBD</div>')+'</div><div style="flex:1"><div style="font-size:14px;font-weight:500;margin-bottom:2px">'+j.title+'</div><div style="font-size:11px;color:var(--muted)">'+j.customer+'</div>'+(j.time?'<div style="font-size:11px;color:#888;margin-top:2px">@ '+j.time+'</div>':'')+'</div><div style="text-align:right"><div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--orange)">$'+j.bid+'</div>'+(!j.date?'<button class="btn btn-ghost" style="font-size:9px;padding:5px 10px;margin-top:6px" onclick="openSheet('+j.id+')">Schedule</button>':'')+'</div></div>').join('') + '<div style="display:flex;justify-content:space-between;background:#0f0f0f;border:1px solid #1a1a1a;border-radius:6px;padding:14px 16px;margin-top:4px"><span style="font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase">Total Est. Earnings</span><span style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--orange)">$'+accepted.reduce((s,j)=>s+j.bid,0)+'</span></div>'; }
+}
+function openSheet(id) {
+  currentJobId = id;
+  const j = jobs.find(x=>x.id===id);
+  document.getElementById('s-title').textContent = j.title;
+  document.getElementById('s-meta').textContent = j.customer + ' · ' + j.postedAt;
+  document.getElementById('s-bid').textContent = '$' + j.bid;
+  document.getElementById('s-desc').textContent = j.description || 'No description provided.';
+  document.getElementById('s-addr').textContent = '📍 ' + (j.address || 'No address given');
+  const statusColor = j.status==='accepted'?'var(--green)':j.status==='declined'?'var(--red)':'var(--amber)';
+  document.getElementById('s-status').innerHTML = '<span style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:'+statusColor+'">'+j.status+'</span>';
+  const actions = document.getElementById('s-actions');
+  if (j.status === 'pending') { actions.innerHTML = '<div class="btn-row"><button class="btn btn-primary" onclick="acceptJob()">&#10003; Accept Job</button><button class="btn btn-danger" onclick="declineJob()">&#10005; Decline</button></div>'; } else { actions.innerHTML = ''; }
+  const sb = document.getElementById('s-schedule-box');
+  if (j.status === 'accepted') {
+    sb.style.display = 'block';
+    document.getElementById('s-sched-current').textContent = j.date ? '✦ '+fmtDate(j.date)+' @ '+j.time : 'Not yet scheduled';
+    document.getElementById('s-date').value = j.date || '';
+    document.getElementById('s-time').value = j.time || '';
+  } else { sb.style.display = 'none'; }
+  renderMsgs(j);
+  document.getElementById('sheet').classList.add('open');
+  document.getElementById('s-msg-input').value = '';
+}
+function renderMsgs(j) {
+  const ml = document.getElementById('s-msgs');
+  if (j.messages.length === 0) { ml.innerHTML = '<div style="color:#333;font-size:12px">No messages yet.</div>'; return; }
+  ml.innerHTML = j.messages.map(m=>'<div class="msg '+(m.from==='you'?'msg-you':'msg-customer')+'"><div class="msg-from">'+(m.from==='you'?'You':j.customer)+'</div>'+m.text+'</div>').join('');
+  ml.scrollTop = ml.scrollHeight;
+}
+function closeSheet() { document.getElementById('sheet').classList.remove('open'); currentJobId = null; }
+function acceptJob() { jobs = jobs.map(j=>j.id===currentJobId?{...j,status:'accepted'}:j); save(); render(); openSheet(currentJobId); }
+function declineJob() { jobs = jobs.map(j=>j.id===currentJobId?{...j,status:'declined'}:j); save(); render(); closeSheet(); }
+function scheduleJob() { const d=document.getElementById('s-date').value; const t=document.getElementById('s-time').value; if(!d||!t)return; jobs=jobs.map(j=>j.id===currentJobId?{...j,date:d,time:t}:j); save(); render(); openSheet(currentJobId); }
+function sendMsg() { const inp=document.getElementById('s-msg-input'); if(!inp.value.trim())return; jobs=jobs.map(j=>j.id===currentJobId?{...j,messages:[...j.messages,{from:'you',text:inp.value.trim()}]}:j); save(); const j=jobs.find(x=>x.id===currentJobId); renderMsgs(j); inp.value=''; }
+function quickAccept(id) { jobs=jobs.map(j=>j.id===id?{...j,status:'accepted'}:j); save(); render(); }
+function quickDecline(id) { jobs=jobs.map(j=>j.id===id?{...j,status:'declined'}:j); save(); render(); }
+function switchTab(tab,el) { currentTab=tab; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); render(); }
+function setCat(c) { activeCategory=c; render(); }
+function postJob() {
+  const title=document.getElementById('f-title').value.trim(); const bid=parseFloat(document.getElementById('f-bid').value);
+  if(!title||!bid)return;
+  jobs.unshift({id:Date.now(),title,description:document.getElementById('f-desc').value,bid,category:document.getElementById('f-cat').value,address:document.getElementById('f-addr').value,customer:'New Customer',status:'pending',date:'',time:'',messages:[],postedAt:'just now'});
+  save();
+  ['f-title','f-desc','f-bid','f-addr'].forEach(id=>document.getElementById(id).value='');
+  const banner=document.getElementById('post-success'); banner.classList.add('show'); setTimeout(()=>banner.classList.remove('show'),3000);
+  render();
+}
+function fmtDate(d) { return new Date(d+'T00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); }
+const manifest={name:"Magic Errands",short_name:"Magic Errands",description:"Dev's Magic Errands job management app",start_url:".",display:"standalone",background_color:"#0a0a0a",theme_color:"#0a0a0a",orientation:"portrait",icons:[{src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230a0a0a'/><text x='256' y='330' font-size='260' text-anchor='middle' fill='%23f97316'>&#10022;</text></svg>",sizes:"512x512",type:"image/svg+xml"}]};
+const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+document.getElementById('manifest-placeholder').href=URL.createObjectURL(blob);
+if('serviceWorker' in navigator){const sw="const CACHE='magic-errands-v1';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});";const swBlob=new Blob([sw],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(swBlob));}
+const hour=new Date().getHours();
+document.getElementById('greeting').textContent=(hour<12?'Good morning':hour<17?'Good afternoon':'Good evening')+', Dev ✦';
+render();
+</script>
+</body>
+</html>
